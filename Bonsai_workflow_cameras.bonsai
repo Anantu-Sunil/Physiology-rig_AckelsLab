@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.8.1"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xmlns:mx="clr-namespace:Bonsai.DAQmx;assembly=Bonsai.DAQmx"
+                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
+                 xmlns:rx="clr-namespace:Bonsai.Reactive;assembly=Bonsai.Core"
+                 xmlns:io="clr-namespace:Bonsai.IO;assembly=Bonsai.System"
+                 xmlns:cv="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision"
+                 xmlns:ffmpeg="clr-namespace:Bonsai.FFmpeg;assembly=Bonsai.FFmpeg"
+                 xmlns:pylon="clr-namespace:Bonsai.Pylon;assembly=Bonsai.Pylon"
+                 xmlns="https://bonsai-rx.org/2018/workflow">
+  <Workflow>
+    <Nodes>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="mx:DigitalInput">
+          <mx:SignalSource />
+          <mx:SampleRate>1000</mx:SampleRate>
+          <mx:ActiveEdge>Rising</mx:ActiveEdge>
+          <mx:SampleMode>ContinuousSamples</mx:SampleMode>
+          <mx:BufferSize>10</mx:BufferSize>
+          <mx:SamplesPerChannel xsi:nil="true" />
+          <mx:Channels>
+            <mx:DigitalInputChannelConfiguration>
+              <mx:ChannelName />
+              <mx:Grouping>OneChannelForEachLine</mx:Grouping>
+              <mx:Lines>DIO2/port0/line1</mx:Lines>
+            </mx:DigitalInputChannelConfiguration>
+          </mx:Channels>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="dsp:MatrixWriter">
+          <dsp:Path>DItesting</dsp:Path>
+          <dsp:Suffix>None</dsp:Suffix>
+          <dsp:Overwrite>true</dsp:Overwrite>
+          <dsp:Layout>ColumnMajor</dsp:Layout>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="GroupWorkflow">
+        <Name>Cameras</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="dsp:FunctionGenerator">
+                <dsp:BufferLength>10000</dsp:BufferLength>
+                <dsp:Frequency>100</dsp:Frequency>
+                <dsp:Waveform>Square</dsp:Waveform>
+                <dsp:SampleRate>10000</dsp:SampleRate>
+                <dsp:Depth>U16</dsp:Depth>
+                <dsp:Amplitude>1</dsp:Amplitude>
+                <dsp:Offset>0</dsp:Offset>
+                <dsp:Phase>0</dsp:Phase>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="mx:DigitalOutput">
+                <mx:SignalSource />
+                <mx:SampleRate>10000</mx:SampleRate>
+                <mx:ActiveEdge>Rising</mx:ActiveEdge>
+                <mx:SampleMode>ContinuousSamples</mx:SampleMode>
+                <mx:BufferSize>10000</mx:BufferSize>
+                <mx:Channels>
+                  <mx:DigitalOutputChannelConfiguration>
+                    <mx:ChannelName />
+                    <mx:Grouping>OneChannelForEachLine</mx:Grouping>
+                    <mx:Lines>DIO2/port0/line0</mx:Lines>
+                  </mx:DigitalOutputChannelConfiguration>
+                </mx:Channels>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Timestamp" />
+            </Expression>
+            <Expression xsi:type="io:CsvWriter">
+              <io:FileName>DOtimestamp.csv</io:FileName>
+              <io:ListSeparator>,</io:ListSeparator>
+              <io:Append>false</io:Append>
+              <io:Overwrite>true</io:Overwrite>
+              <io:Suffix>None</io:Suffix>
+              <io:IncludeHeader>true</io:IncludeHeader>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="cv:CameraCapture">
+                <cv:Index>0</cv:Index>
+                <cv:CaptureProperties />
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Timestamp" />
+            </Expression>
+            <Expression xsi:type="io:CsvWriter">
+              <io:FileName>BodycamTimestamp.csv</io:FileName>
+              <io:ListSeparator>,</io:ListSeparator>
+              <io:Append>false</io:Append>
+              <io:Overwrite>true</io:Overwrite>
+              <io:Suffix>None</io:Suffix>
+              <io:IncludeHeader>true</io:IncludeHeader>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="ffmpeg:VideoWriter">
+                <ffmpeg:FileName>BodycamVideo.avi</ffmpeg:FileName>
+                <ffmpeg:Suffix>None</ffmpeg:Suffix>
+                <ffmpeg:Overwrite>true</ffmpeg:Overwrite>
+                <ffmpeg:FrameRate>30</ffmpeg:FrameRate>
+                <ffmpeg:OutputArguments />
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="pylon:PylonCapture">
+                <pylon:SerialNumber>40300721</pylon:SerialNumber>
+                <pylon:ParameterFile>Basler_with trigger.pfs</pylon:ParameterFile>
+                <pylon:GrabStrategy>OneByOne</pylon:GrabStrategy>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Image</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Timestamp" />
+            </Expression>
+            <Expression xsi:type="io:CsvWriter">
+              <io:FileName>BaslerTimestamp.csv</io:FileName>
+              <io:ListSeparator>,</io:ListSeparator>
+              <io:Append>false</io:Append>
+              <io:Overwrite>true</io:Overwrite>
+              <io:Suffix>None</io:Suffix>
+              <io:IncludeHeader>true</io:IncludeHeader>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="ffmpeg:VideoWriter">
+                <ffmpeg:FileName>BaslerVideo.avi</ffmpeg:FileName>
+                <ffmpeg:Suffix>None</ffmpeg:Suffix>
+                <ffmpeg:Overwrite>true</ffmpeg:Overwrite>
+                <ffmpeg:FrameRate>100</ffmpeg:FrameRate>
+                <ffmpeg:OutputArguments />
+              </Combinator>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge From="0" To="1" Label="Source1" />
+            <Edge From="1" To="2" Label="Source1" />
+            <Edge From="2" To="3" Label="Source1" />
+            <Edge From="4" To="5" Label="Source1" />
+            <Edge From="4" To="7" Label="Source1" />
+            <Edge From="5" To="6" Label="Source1" />
+            <Edge From="8" To="9" Label="Source1" />
+            <Edge From="9" To="10" Label="Source1" />
+            <Edge From="9" To="12" Label="Source1" />
+            <Edge From="10" To="11" Label="Source1" />
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="dsp:Average" />
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Val0</Selector>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:DistinctUntilChanged" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:Skip">
+          <rx:Count>3</rx:Count>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:TakeUntil" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:Skip">
+          <rx:Count>1</rx:Count>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:SubscribeWhen" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:Repeat" />
+      </Expression>
+      <Expression xsi:type="Annotation">
+        <Name>Note</Name>
+        <Text><![CDATA[The DigitalInput node collects DI signals from the cDAQ DIO module's line 1, which is then used to trigger the start and end of camera acquisition.
+
+'Average' is used to convert the data type from OpenCV.Net.Mat to Doubles for processing in Bonsai.
+'DistinctUntilChanged' returns values only when there's a change in the value. i.e. whenever there's a trigger pulse.
+
+'SubscribeWhen' ensures that the acquisition starts only when there's a trigger pulse. The 'Skip' node before 'SubscribeWhen' is used to avoid the initial zero value.
+
+'TakeUntil' stops the acquisition when there's a second trigger pulse. 
+
+Each trigger pulse results in two non-zero values followed by a baseline zero value, e.g. 0.6, 1.4, 0
+Since the second 'Skip' node (the one before 'TakeUntil') is subscribed after the first non-zero value of the trigger pulse (0.6 in the above example), it needs to skip the next two values in order to return a value only when the next trigger pulse is initiated. 
+]]></Text>
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge From="0" To="1" Label="Source1" />
+      <Edge From="0" To="3" Label="Source1" />
+      <Edge From="2" To="7" Label="Source1" />
+      <Edge From="3" To="4" Label="Source1" />
+      <Edge From="4" To="5" Label="Source1" />
+      <Edge From="5" To="6" Label="Source1" />
+      <Edge From="5" To="8" Label="Source1" />
+      <Edge From="6" To="7" Label="Source2" />
+      <Edge From="7" To="9" Label="Source1" />
+      <Edge From="8" To="9" Label="Source2" />
+      <Edge From="9" To="10" Label="Source1" />
+    </Edges>
+  </Workflow>
+</WorkflowBuilder>
